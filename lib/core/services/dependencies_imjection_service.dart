@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weather_app/core/services/http_service.dart';
 import 'package:weather_app/features/weather/data/data_sources/weather_remote_datasources.dart';
 import 'package:weather_app/features/weather/data/repositories/weather_repositories.dart';
@@ -10,6 +11,9 @@ import 'package:weather_app/features/weather/presentation/manager/bloc/weather_b
 final getIt = GetIt.instance;
 
 Future<void> init() async {
+  // REGISTRO DE SHAREDPREFERENCES:
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerSingleton<SharedPreferences>(sharedPreferences);
   // REGISTRO DE CLIENTE HTTP:
   getIt.registerSingleton<Client>(Client());
 // REGISTRO DE SERVICIO HTTP:

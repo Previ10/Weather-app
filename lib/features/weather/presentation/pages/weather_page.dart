@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_fadein/flutter_fadein.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weather_app/core/services/dependencies_imjection_service.dart';
+import 'package:weather_app/core/services/geo_locator_service.dart';
+import 'package:weather_app/core/services/preferences_service.dart';
 import 'package:weather_app/core/theme/theme.dart';
 import 'package:weather_app/features/weather/data/models/weather_response_model.dart';
 import 'package:weather_app/features/weather/presentation/manager/bloc/weather_bloc.dart';
@@ -26,20 +32,53 @@ class _WeatherPageState extends State<WeatherPage> {
   bool isLoading = true;
   bool isError = false;
   final int timezoneOffset = 7200;
+  late StreamSubscription<Position> _positionSubscription;
+  late final GeoLocatorService geoLocatorService;
 
   @override
   void initState() {
-    weatherBloc.add(const ActionFetchWeather(-31.4135, -64.18105));
     super.initState();
+    geoLocatorService = GeoLocatorService();
+    _fetchCoordinatesAndWeather();
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription.cancel();
+    super.dispose();
+  }
+
+  void showSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No coordinates found in local storage'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _fetchCoordinatesAndWeather() async {
+    final prefs = await SharedPreferences.getInstance();
+    final preferencesServices = PreferencesServices(prefs: prefs);
+    final coordinates = await preferencesServices.getCoordinates();
+
+    if (coordinates != null) {
+      final latitude = coordinates['latitude']!;
+      final longitude = coordinates['longitude']!;
+      weatherBloc.add(ActionFetchWeather(latitude, longitude));
+    } else {}
+  }
+
+  Future<void> updateLocation() async {
+    setState(() {});
+
+    final position = await geoLocatorService.getCurrentPosition();
+    weatherBloc.add(ActionFetchWeather(position.latitude, position.longitude));
   }
 
   @override
   Widget build(BuildContext context) {
     screenSize = MediaQuery.of(context).size;
-
-    DateTime utcNow = DateTime.now().toUtc();
-    DateTime localTime = utcNow.add(Duration(seconds: timezoneOffset));
-    String formattedTime = DateFormat('yyyy/MM/dd - hh:mm').format(localTime);
 
     return Scaffold(
       body: Container(
@@ -79,57 +118,85 @@ class _WeatherPageState extends State<WeatherPage> {
             child: isLoading
                 ? LoadingAnimationWidget.inkDrop(
                     color: Palette.weatherGreen,
-                    size: screenSize.height * 0.05,
+                    size: screenSize.height * 0.09,
                   )
                 : isError
                     ? const Text('Something went wrong!')
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Column(
-                            children: [
-                              Icon(
-                                Icons.location_on_sharp,
-                                size: screenSize.height * 0.03,
-                                color: Palette.mediumGrey,
-                              ),
-                              Text(
-                                weatherResponseModel!.name,
-                                style: GoogleFonts.anton(
-                                  fontSize: screenSize.width * 0.035,
-                                  letterSpacing: .6,
+                          FadeIn(
+                            duration: const Duration(seconds: 1),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.location_on_sharp,
+                                  size: screenSize.height * 0.03,
+                                  color: Palette.mediumGrey,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            '${weatherResponseModel!.main.temp} °C',
-                            style: TextStyle(
-                                fontSize: screenSize.width * 0.1,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            formattedTime,
-                            style: GoogleFonts.meeraInimai(
-                              fontSize: screenSize.width * 0.030,
-                              letterSpacing: .6,
+                                Text(
+                                  weatherResponseModel!.name,
+                                  style: GoogleFonts.anton(
+                                    fontSize: screenSize.width * 0.035,
+                                    letterSpacing: .6,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          WeatherAnimationWidget(
-                            weatherDetail:
-                                weatherResponseModel!.weatherDetail[0],
-                            screenSize: screenSize,
-                            weatherCondition: weatherResponseModel!
-                                    .weatherDetail.isNotEmpty
-                                ? weatherResponseModel!.weatherDetail.first.main
-                                : 'Clear',
+                          const SizedBox(height: 20),
+                          FadeIn(
+                            duration: const Duration(seconds: 1),
+                            child: Text(
+                              '${weatherResponseModel!.main.temp}°C',
+                              style: TextStyle(
+                                  color: Palette.softGrey,
+                                  fontSize: screenSize.width * 0.1,
+                                  fontWeight: FontWeight.w400),
+                            ),
+                          ),
+                          FadeIn(
+                            duration: const Duration(seconds: 1),
+                            child: Text(
+                              '${weatherResponseModel!.dateTime}',
+                              style: GoogleFonts.meeraInimai(
+                                fontSize: screenSize.width * 0.030,
+                                letterSpacing: .6,
+                              ),
+                            ),
+                          ),
+                          FadeIn(
+                            duration: const Duration(seconds: 1),
+                            child: WeatherAnimationWidget(
+                              weatherDetail:
+                                  weatherResponseModel!.weatherDetail[0],
+                              screenSize: screenSize,
+                              weatherCondition:
+                                  weatherResponseModel!.weatherDetail.isNotEmpty
+                                      ? weatherResponseModel!
+                                          .weatherDetail.first.main
+                                      : 'Clear',
+                            ),
                           ),
                           SizedBox(height: screenSize.height * 0.02),
-                          WeatherDetailCardWidget(
-                            mainWeather: weatherResponseModel!.main,
-                            screenSize: screenSize,
-                          )
+                          FadeIn(
+                            duration: const Duration(seconds: 1),
+                            child: WeatherDetailCardWidget(
+                              mainWeather: weatherResponseModel!.main,
+                              screenSize: screenSize,
+                              weatherResponseModel: weatherResponseModel!,
+                            ),
+                          ),
+                          SizedBox(height: screenSize.height * 0.02),
+                          IconButton(
+                              color: Palette.softBlue,
+                              iconSize: screenSize.width * 0.07,
+                              onPressed: () {
+                                _fetchCoordinatesAndWeather();
+                              },
+                              icon: const Icon(
+                                Icons.replay,
+                              )),
                         ],
                       ),
           ),

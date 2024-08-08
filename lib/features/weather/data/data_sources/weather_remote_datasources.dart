@@ -18,7 +18,6 @@ class WeatherRemoteDatasources implements WeatherRemoteDatasourcesBase {
     try {
       final url = '$baseUrl?lat=$lat&lon=$lon&appid=$apiKey&units=metric';
       final response = await http.get(url: url);
-      print(response.toString());
 
       final weatherResponse = WeatherResponseModel.fromJson(response);
       return weatherResponse;

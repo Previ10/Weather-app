@@ -7,6 +7,8 @@ class MainModel extends Main {
     required super.tempMax,
     required super.pressure,
     required super.humidity,
+    required super.feelsLike,
+    required super.sealevel,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,8 @@ class MainModel extends Main {
       tempMax: json['temp_max'].toDouble(),
       pressure: json['pressure'],
       humidity: json['humidity'],
+      feelsLike: json['feels_like'].toDouble(),
+      sealevel: json['sea_level'],
     );
   }
 }

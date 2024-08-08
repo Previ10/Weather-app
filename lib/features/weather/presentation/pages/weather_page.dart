@@ -1,17 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_fadein/flutter_fadein.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:weather_app/core/services/dependencies_imjection_service.dart';
-import 'package:weather_app/core/services/geo_locator_service.dart';
-import 'package:weather_app/core/services/preferences_service.dart';
 import 'package:weather_app/core/theme/theme.dart';
 import 'package:weather_app/features/weather/data/models/weather_response_model.dart';
+import 'package:weather_app/features/weather/presentation/manager/bloc/provider/weather_provider.dart';
 import 'package:weather_app/features/weather/presentation/manager/bloc/weather_bloc.dart';
 import 'package:weather_app/features/weather/presentation/widgets/weather_animation_widget.dart';
 import 'package:weather_app/features/weather/presentation/widgets/weather_detail_card_widget.dart';
@@ -31,49 +28,57 @@ class _WeatherPageState extends State<WeatherPage> {
   WeatherResponseModel? weatherResponseModel;
   bool isLoading = true;
   bool isError = false;
-  final int timezoneOffset = 7200;
-  late StreamSubscription<Position> _positionSubscription;
-  late final GeoLocatorService geoLocatorService;
 
   @override
   void initState() {
     super.initState();
-    geoLocatorService = GeoLocatorService();
-    _fetchCoordinatesAndWeather();
+
+    final geoLocatorProvider =
+        Provider.of<GeoLocatorProvider>(context, listen: false);
+
+    geoLocatorProvider.getCurrentLocation().then((_) {
+      if (geoLocatorProvider.latitude != null &&
+          geoLocatorProvider.longitude != null) {
+        weatherBloc.add(
+          ActionFetchWeather(
+            geoLocatorProvider.latitude!,
+            geoLocatorProvider.longitude!,
+          ),
+        );
+      } else {
+        setState(() {
+          isLoading = false;
+          isError = true;
+        });
+        showScaffoldMessage();
+      }
+    });
+  }
+
+  void showScaffoldMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to get location coordinates')),
+    );
   }
 
   @override
   void dispose() {
-    _positionSubscription.cancel();
+    weatherBloc.close();
     super.dispose();
-  }
-
-  void showSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No coordinates found in local storage'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  Future<void> _fetchCoordinatesAndWeather() async {
-    final prefs = await SharedPreferences.getInstance();
-    final preferencesServices = PreferencesServices(prefs: prefs);
-    final coordinates = await preferencesServices.getCoordinates();
-
-    if (coordinates != null) {
-      final latitude = coordinates['latitude']!;
-      final longitude = coordinates['longitude']!;
-      weatherBloc.add(ActionFetchWeather(latitude, longitude));
-    } else {}
   }
 
   Future<void> updateLocation() async {
     setState(() {});
+    final geoLocatorProvider =
+        Provider.of<GeoLocatorProvider>(context, listen: false);
 
-    final position = await geoLocatorService.getCurrentPosition();
-    weatherBloc.add(ActionFetchWeather(position.latitude, position.longitude));
+    await geoLocatorProvider.getCurrentLocation();
+    weatherBloc.add(
+      ActionFetchWeather(
+        geoLocatorProvider.latitude!,
+        geoLocatorProvider.longitude!,
+      ),
+    );
   }
 
   @override
@@ -192,7 +197,7 @@ class _WeatherPageState extends State<WeatherPage> {
                               color: Palette.softBlue,
                               iconSize: screenSize.width * 0.07,
                               onPressed: () {
-                                _fetchCoordinatesAndWeather();
+                                updateLocation();
                               },
                               icon: const Icon(
                                 Icons.replay,

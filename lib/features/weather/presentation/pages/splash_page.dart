@@ -93,13 +93,8 @@ class _SplashPageState extends State<SplashPage> {
                           style: ButtonStyle(
                             backgroundColor:
                                 WidgetStateProperty.all(Palette.weatherGreen),
-                            padding:
-                                WidgetStateProperty.all<EdgeInsetsGeometry>(
-                              const EdgeInsets.symmetric(
-                                  vertical: 20.0, horizontal: 42.0),
-                            ),
                             minimumSize: WidgetStateProperty.all<Size>(
-                              Size(screenSize.width * 0.3, 4),
+                              Size(screenSize.width * 0.15, 4),
                             ),
                             shape:
                                 WidgetStateProperty.all<RoundedRectangleBorder>(
@@ -115,7 +110,7 @@ class _SplashPageState extends State<SplashPage> {
                             'Iniciar',
                             style: TextStyle(
                               color: Palette.backgroundColorScaffold,
-                              fontSize: screenSize.width * 0.03,
+                              fontSize: screenSize.width * 0.025,
                             ),
                           ),
                         )

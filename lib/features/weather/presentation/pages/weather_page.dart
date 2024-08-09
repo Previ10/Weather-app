@@ -131,7 +131,7 @@ class _WeatherPageState extends State<WeatherPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           FadeIn(
-                            duration: const Duration(seconds: 1),
+                            duration: const Duration(seconds: 1100),
                             child: Column(
                               children: [
                                 Icon(
@@ -151,7 +151,7 @@ class _WeatherPageState extends State<WeatherPage> {
                           ),
                           const SizedBox(height: 20),
                           FadeIn(
-                            duration: const Duration(seconds: 1),
+                            duration: const Duration(milliseconds: 1200),
                             child: Text(
                               '${weatherResponseModel!.main.temp}°C',
                               style: TextStyle(
@@ -171,7 +171,7 @@ class _WeatherPageState extends State<WeatherPage> {
                             ),
                           ),
                           FadeIn(
-                            duration: const Duration(seconds: 1),
+                            duration: const Duration(milliseconds: 1300),
                             child: WeatherAnimationWidget(
                               weatherDetail:
                                   weatherResponseModel!.weatherDetail[0],
@@ -185,7 +185,7 @@ class _WeatherPageState extends State<WeatherPage> {
                           ),
                           SizedBox(height: screenSize.height * 0.02),
                           FadeIn(
-                            duration: const Duration(seconds: 1),
+                            duration: const Duration(milliseconds: 1500),
                             child: WeatherDetailCardWidget(
                               mainWeather: weatherResponseModel!.main,
                               screenSize: screenSize,
